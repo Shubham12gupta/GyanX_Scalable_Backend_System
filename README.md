@@ -30,6 +30,7 @@ FastAPI Pods (HPA: min 2 → max 10 replicas)
    ↓
 Redis (response cache)   PostgreSQL (persistent storage)
 ```
+<img width="725" height="622" alt="Screenshot 2026-04-09 000458" src="https://github.com/user-attachments/assets/b40af49a-78f6-4ae8-b75e-4f58d425ed13" />
 
 ## Tech Stack
 
