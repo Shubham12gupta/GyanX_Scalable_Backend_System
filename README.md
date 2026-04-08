@@ -1,11 +1,6 @@
 # GyanX_Scalable_Backend_System-
 
 <img width="778" height="649" alt="image" src="https://github.com/user-attachments/assets/a31c5962-a752-4aa7-9cb9-10e67f753ebd" />
-
-
-Theek hai, banata hoon — live URL ki jagah tumhara Linode IP 172.104.37.127 use kar raha hoon.
-
-README.md
 markdown# SpeakOps Backend
 
 Scalable AI/compute backend deployed on Akamai Linode using Kubernetes (LKE).  
