@@ -192,7 +192,3 @@ Push to `main` → GitHub Actions:
 - Upgrade LKE node pool — `g6-standard-2` → `g6-standard-4`
 - Akamai CDN caching for cacheable GET responses
 
-Bas GitHub pe push karo:
-bashgit add README.md
-git commit -m "add README"
-git push origin main
