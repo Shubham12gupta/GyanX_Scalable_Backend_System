@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>SpeakOps — Stress Test</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Courier New', monospace;
+      background: #042C53;
+      color: #E6F1FB;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .card {
+      background: #0C447C;
+      border: 1px solid #185FA5;
+      border-radius: 10px;
+      padding: 24px;
+      width: 100%;
+      max-width: 520px;
+    }
+
+    h2 { font-size: 14px; letter-spacing: 0.06em; margin-bottom: 4px; }
+    p  { font-size: 11px; color: #85B7EB; margin-bottom: 18px; }
+
+    input[type=text] {
+      width: 100%;
+      background: #042C53;
+      border: 1px solid #378ADD;
+      border-radius: 6px;
+      padding: 8px 12px;
+      color: #E6F1FB;
+      font-family: 'Courier New', monospace;
+      font-size: 12px;
+      margin-bottom: 16px;
+      outline: none;
+    }
+
+    .btns {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+
+    .btn {
+      flex: 1;
+      padding: 10px 4px;
+      background: #042C53;
+      border: 1px solid #185FA5;
+      border-radius: 6px;
+      color: #85B7EB;
+      font-family: 'Courier New', monospace;
+      font-size: 11px;
+      font-weight: 700;
+      cursor: pointer;
+      text-align: center;
+    }
+
+    .btn:hover  { background: #185FA5; color: #E6F1FB; }
+    .btn.active { background: #378ADD; border-color: #85B7EB; color: #fff; }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+      margin-bottom: 14px;
+    }
+
+    .stat {
+      background: #042C53;
+      border: 1px solid #185FA5;
+      border-radius: 6px;
+      padding: 8px;
+      text-align: center;
+    }
+
+    .stat .v { font-size: 18px; font-weight: 700; }
+    .stat .k { font-size: 10px; color: #85B7EB; margin-top: 2px; }
+    .ok  .v  { color: #5DCAA5; }
+    .err .v  { color: #F09595; }
+    .lat .v  { color: #FAC775; }
+
+    .bar-bg {
+      background: #042C53;
+      border: 1px solid #185FA5;
+      border-radius: 4px;
+      height: 5px;
+      margin-bottom: 14px;
+      overflow: hidden;
+    }
+
+    .bar-fill {
+      height: 100%;
+      width: 0%;
+      background: #378ADD;
+      transition: width 0.1s;
+    }
+
+    .actions { display: flex; gap: 8px; margin-bottom: 14px; }
+
+    .run {
+      flex: 1;
+      padding: 10px;
+      background: #185FA5;
+      border: 1px solid #378ADD;
+      border-radius: 6px;
+      color: #E6F1FB;
+      font-family: 'Courier New', monospace;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .run:hover:not(:disabled) { background: #378ADD; }
+    .run:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    .stop {
+      padding: 10px 16px;
+      background: transparent;
+      border: 1px solid #E24B4A;
+      border-radius: 6px;
+      color: #F09595;
+      font-family: 'Courier New', monospace;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .stop:disabled { opacity: 0.3; cursor: not-allowed; }
+
+    .log {
+      background: #042C53;
+      border: 1px solid #185FA5;
+      border-radius: 6px;
+      padding: 10px;
+      height: 120px;
+      overflow-y: auto;
+      font-size: 11px;
+      color: #85B7EB;
+    }
+
+    .l      { margin-bottom: 2px; line-height: 1.5; }
+    .l.ok   { color: #5DCAA5; }
+    .l.er   { color: #F09595; }
+  </style>
+</head>
+<body>
+<div class="card">
+
+  <h2>SPEAKOPS / STRESS TEST</h2>
+  <p>Fire concurrent requests at your live API endpoint</p>
+
+  <input type="text" id="ep" placeholder="https://your-linode-ip/generate-response"/>
+
+  <div class="btns">
+    <button class="btn" data-n="1000"  onclick="sel(this)">1K</button>
+    <button class="btn" data-n="3000"  onclick="sel(this)">3K</button>
+    <button class="btn" data-n="5000"  onclick="sel(this)">5K</button>
+    <button class="btn" data-n="10000" onclick="sel(this)">10K</button>
+    <button class="btn" data-n="20000" onclick="sel(this)">20K</button>
+  </div>
+
+  <div class="stats">
+    <div class="stat">     <div class="v" id="s-sent">0</div><div class="k">sent</div></div>
+    <div class="stat ok">  <div class="v" id="s-ok">0</div>  <div class="k">success</div></div>
+    <div class="stat err"> <div class="v" id="s-err">0</div> <div class="k">errors</div></div>
+    <div class="stat lat"> <div class="v" id="s-lat">—</div> <div class="k">avg ms</div></div>
+  </div>
+
+  <div class="bar-bg"><div class="bar-fill" id="bar"></div></div>
+
+  <div class="actions">
+    <button class="run" id="rbtn" onclick="go()" disabled>select load level</button>
+    <button class="stop" id="sbtn" onclick="halt()" disabled>stop</button>
+  </div>
+
+  <div class="log" id="log">
+    <div class="l">— select a count and run —</div>
+  </div>
+
+</div>
+<script>
+  let N=0, running=false, stop=false, sent=0, ok=0, err=0, lats=[];
+
+  function sel(b) {
+    if (running) return;
+    document.querySelectorAll('.btn').forEach(x => x.classList.remove('active'));
+    b.classList.add('active');
+    N = parseInt(b.dataset.n);
+    document.getElementById('rbtn').disabled = false;
+    document.getElementById('rbtn').textContent = 'run ' + N.toLocaleString() + ' requests';
+  }
+
+  function log(msg, t) {
+    const el = document.getElementById('log');
+    const d = document.createElement('div');
+    d.className = 'l ' + (t||'');
+    d.textContent = '[' + new Date().toLocaleTimeString('en',{hour12:false}) + '] ' + msg;
+    el.appendChild(d);
+    el.scrollTop = el.scrollHeight;
+  }
+
+  function upd() {
+    document.getElementById('s-sent').textContent = sent.toLocaleString();
+    document.getElementById('s-ok').textContent   = ok.toLocaleString();
+    document.getElementById('s-err').textContent  = err.toLocaleString();
+    const avg = lats.length ? Math.round(lats.reduce((a,b)=>a+b,0)/lats.length) : 0;
+    document.getElementById('s-lat').textContent  = avg ? avg+'ms' : '—';
+    document.getElementById('bar').style.width    = Math.min(N ? (sent/N)*100 : 0, 100) + '%';
+  }
+
+  async function req(url) {
+    const t = performance.now();
+    try {
+      const r = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type':'application/json', 'X-API-Key':'test-key' },
+        body: JSON.stringify({ prompt: 'stress test' }),
+        signal: AbortSignal.timeout(8000)
+      });
+      lats.push(Math.round(performance.now()-t));
+      r.ok ? ok++ : err++;
+    } catch { err++; }
+    sent++;
+  }
+
+  async function go() {
+    const url = document.getElementById('ep').value.trim();
+    if (!url) { log('enter endpoint URL', 'er'); return; }
+    running=true; stop=false; sent=0; ok=0; err=0; lats=[];
+    document.getElementById('log').innerHTML = '';
+    document.getElementById('rbtn').disabled = true;
+    document.getElementById('sbtn').disabled = false;
+    log('firing ' + N.toLocaleString() + ' requests → ' + url);
+    const tick = setInterval(upd, 300);
+    let d = 0;
+    const c = 20;
+    async function worker() { while(d<N&&!stop){d++;await req(url);} }
+    await Promise.all(Array.from({length:c}, worker));
+    clearInterval(tick); upd();
+    running = false;
+    document.getElementById('sbtn').disabled = true;
+    document.getElementById('rbtn').disabled = false;
+    const avg = lats.length ? Math.round(lats.reduce((a,b)=>a+b,0)/lats.length) : 0;
+    log('done — ' + ok.toLocaleString() + ' ok / ' + err.toLocaleString() + ' errors | avg ' + avg + 'ms', err>ok?'er':'ok');
+  }
+
+  function halt() {
+    stop = true;
+    log('stopped by user', 'er');
+    document.getElementById('sbtn').disabled = true;
+  }
+</script>
+</body>
+</html>

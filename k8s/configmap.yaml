@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: speakops-config
+  namespace: default
+data:
+  APP_NAME: "SpeakOps Backend"
+  APP_VERSION: "1.0.0"
+  DEBUG: "False"
+  AI_MODEL: "mock"
+  REDIS_HOST: "redis-svc"
+  REDIS_PORT: "6379"
+  RATE_LIMIT: "100/minute"
+  API_KEY_NAME: "X-API-Key"
+  CACHE_TTL: "60"

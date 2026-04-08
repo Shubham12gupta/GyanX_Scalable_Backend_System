@@ -1,0 +1,76 @@
+version: "3.9"
+
+services:
+  api:
+    build: .
+    container_name: speakops-api
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    environment:
+      - REDIS_HOST=redis
+      - DATABASE_URL=postgresql+asyncpg://speakops:speakops@postgres:5432/speakops
+    depends_on:
+      redis:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - speakops-net
+
+  redis:
+    image: redis:7-alpine
+    container_name: speakops-redis
+    ports:
+      - "6379:6379"
+    command: redis-server --requirepass ${REDIS_PASSWORD:-redispass}
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    networks:
+      - speakops-net
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: speakops-postgres
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: speakops
+      POSTGRES_PASSWORD: speakops
+      POSTGRES_DB: speakops
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U speakops"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    networks:
+      - speakops-net
+
+  nginx:
+    image: nginx:alpine
+    container_name: speakops-nginx
+    ports:
+      - "80:80"
+    volumes:
+      - ./infra/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - api
+    restart: unless-stopped
+    networks:
+      - speakops-net
+
+volumes:
+  pg_data:
+
+networks:
+  speakops-net:
+    driver: bridge
